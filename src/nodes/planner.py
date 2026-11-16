@@ -2,13 +2,12 @@ from typing import TypedDict
 from langchain.chat_models import init_chat_model
 import os
 from dotenv import load_dotenv
+import json
 load_dotenv()
 
 api_key = os.getenv("GROQ_API_KEY")
 
-class ResearchPlan(TypedDict):
-    plan:list[str]
-    
+
 
 llm = init_chat_model(
     model= "openai/gpt-oss-120b",
@@ -18,7 +17,6 @@ llm = init_chat_model(
 )
 
 
-planner_llm = llm.with_structured_output(ResearchPlan)
 
 def planner_node(state):
     question = state["question"]
@@ -31,7 +29,10 @@ def planner_node(state):
     Research Question: {question}
 
     Return a list of research tasks."""
-    response = planner_llm.invoke(prompt)
-    return {
-        "plan":response["plan"]
-    }
+    response = llm.invoke(prompt)
+
+    print("\n========== RAW LLM RESPONSE ==========")
+    print(repr(response.content))
+
+    print("\n========== RESPONSE TYPE ==========")
+    print(type(response.content))

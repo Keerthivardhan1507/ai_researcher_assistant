@@ -1,4 +1,5 @@
 from langchain.chat_models import init_chat_model
+from src.tools.web_search import web_search
 import os
 from dotenv import load_dotenv
 load_dotenv()
@@ -17,22 +18,62 @@ def researcher_node(state):
     research_tasks = state["plan"] 
     
     findings = []
+    sources = []
     
     for task in research_tasks:
+        
+        print(f"\nResearching:{task}")
+        
+        search_results = web_search(task)
+        
+        if not search_results:
+            findings.append(
+                f"Task:{task}\n No search results were found"
+            )
+            
+            continue
+        
+        context = ""
+        
+        for index,item in enumerate(search_results,start = 1):
+            
+            source_id = f"S{len(sources) + 1}"
+            
+            
+            sources.append({
+                "id":source_id,
+                "title":item["title"],
+                "url":item["url"]
+            })
+            
+            context += f"""
+            Source ID: {source_id},
+            Title:{item["title"]},
+            URL:{item["URL"]},
+            Content:{item["content"]}
+            """
+            
         prompt = f"""
     you are an expert ai reasearcher.
     Research task: {task}
-
-    Provide a concise research note.
-    Include relevant facts, explanations and limitations.
-    If you cannot verify a current fact, say so.
+    
+    Retrived web information:{context}
+    
+    Instructions:
+        1. Summarize the relevant information.
+        2. Use only information supported by the retrieved content.
+        3. Add source IDs such as [S1] to support your statements.
+        4. Mention when evidence is insufficient.
+        5. Do not invent facts or references.
     """
         response = llm.invoke(prompt)
-        findings.append(response.content)
+        findings.append(
+            f"Research Task:{task}\n{response.content}"
+    )
     
-    return {"findings": findings}
+    return {
+        "findings": findings,
+        "sources":sources
+    }
 
 
-
-
-    
