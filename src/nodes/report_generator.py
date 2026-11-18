@@ -13,15 +13,34 @@ llm = init_chat_model(
 
 def report_generator_node(state):
     question = state["question"]
-    
     findings  = state["findings"]
+    sources = state["sources"]
+    
+    
+    limit_findings = [
+        finding[:400] for finding in findings[:3]
+    ]
+    # Limit source references
+    limited_sources = [
+        {
+            "id": source["id"],
+            "title": source["title"][:100],
+            "url": source["url"]
+        }
+        for source in sources[:3]
+    ]
+    
+    for finding in findings:
+        limit_findings.append(finding)
+        
     
     prompt = f"""
     you are a professional research report writer.
     Research Question: {question}
-    Research Findings: {findings}
-    Create a structured research report containing:
-
+    Research Findings: {limit_findings}
+    Available sources :{limited_sources}
+    Create a concise research report containing:
+    
     1. Introduction
     2. Key Findings
     3. Detailed Analysis
@@ -31,6 +50,11 @@ def report_generator_node(state):
     Use clear headings and professional language.
     Do not invent facts or citations.
     """
+    
+    print("Number of findings:", len(limit_findings))
+    print("Total finding characters:",
+      sum(len(x) for x in limit_findings))
+    print("Number of sources:", len(limited_sources))
     
     response = llm.invoke(prompt)
     return {"final_report": response.content}

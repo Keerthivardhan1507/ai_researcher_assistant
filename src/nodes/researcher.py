@@ -8,7 +8,7 @@ api_key = os.getenv("GROQ_API_KEY")
 
 
 llm = init_chat_model(
-    mdodel= "openai/gpt-oss-120b",
+    model= "openai/gpt-oss-120b",
     model_provider = "groq",
     temperature = 0.0,
     api_key = api_key,
@@ -49,7 +49,7 @@ def researcher_node(state):
             context += f"""
             Source ID: {source_id},
             Title:{item["title"]},
-            URL:{item["URL"]},
+            URL:{item["url"]},
             Content:{item["content"]}
             """
             
@@ -67,9 +67,10 @@ def researcher_node(state):
         5. Do not invent facts or references.
     """
         response = llm.invoke(prompt)
+
         findings.append(
-            f"Research Task:{task}\n{response.content}"
-    )
+        f"Research Task: {task}\n{response.content[:1200]}"
+)
     
     return {
         "findings": findings,

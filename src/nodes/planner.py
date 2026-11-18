@@ -2,6 +2,7 @@ from typing import TypedDict
 from langchain.chat_models import init_chat_model
 import os
 from dotenv import load_dotenv
+import re
 import json
 load_dotenv()
 
@@ -28,11 +29,26 @@ def planner_node(state):
 
     Research Question: {question}
 
-    Return a list of research tasks."""
+    Return Exactly five number tasks
+    each task must be on a different line
+    Do not include an introduction or conclusion.
+    """
     response = llm.invoke(prompt)
+    
+    content = response.content
+    
+    tasks = re.findall(
+        r"(?m)^\s*\d+[\.\)]\s+(.+?)(?=\s*(?:\n\s*[-*]\s+|\n\s*\d+[\.\)]|\Z))",
+        content,
+        re.DOTALL
+    )
+    
+    tasks = [task.replace("\n"," ").strip() for task in tasks]
+    
+    if len(tasks) != 5:
+        raise ValueError(
+            f"Expected 5 research tasks, received {len(tasks)}. "
+            f"Raw response: {content}"
+        )
 
-    print("\n========== RAW LLM RESPONSE ==========")
-    print(repr(response.content))
-
-    print("\n========== RESPONSE TYPE ==========")
-    print(type(response.content))
+    return {"plan": tasks}
