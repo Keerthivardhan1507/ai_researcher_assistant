@@ -1,4 +1,5 @@
 from langchain.chat_models import init_chat_model
+from src.tools.source_validator import validate_search_results
 from src.tools.web_search import web_search
 import os
 from dotenv import load_dotenv
@@ -19,6 +20,7 @@ def researcher_node(state):
     
     findings = []
     sources = []
+    seen_urls = set()
     
     for task in research_tasks:
         
@@ -26,11 +28,16 @@ def researcher_node(state):
         
         search_results = web_search(task)
         
+        search_results = validate_search_results(
+            search_results,
+            seen_urls
+        )
+        
+        print(f"Validated search results:{len(search_results)}")
         if not search_results:
             findings.append(
                 f"Task:{task}\n No search results were found"
             )
-            
             continue
         
         context = ""
